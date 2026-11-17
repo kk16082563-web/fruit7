@@ -1,0 +1,590 @@
+
+
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fruity AI</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Kanit', sans-serif;
+  background: linear-gradient(135deg,#e5f4ff,#cce7ff);
+  min-height: 100vh;
+  padding: 35px 15px;
+  color: #3979aa;
+}
+
+.container {
+  max-width: 780px;
+  margin: auto;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.logo {
+  font-size: 48px;
+  font-weight: 800;
+  color: #328bd2;
+}
+
+.subtitle {
+  color: #7da8ca;
+  font-size: 14px;
+}
+
+.fruits {
+  font-size: 27px;
+  margin-top: 15px;
+  letter-spacing: 10px;
+}
+
+.card {
+  background: white;
+  padding: 28px;
+  border-radius: 25px;
+  margin-bottom: 22px;
+  box-shadow: 0 12px 35px rgba(65,139,190,.12);
+}
+
+h2 {
+  font-size: 20px;
+  margin-bottom: 18px;
+  color: #398bd0;
+}
+
+.upload {
+  border: 2px dashed #8fc9f5;
+  background: #f3f9ff;
+  border-radius: 20px;
+  padding: 38px 15px;
+  text-align: center;
+  cursor: pointer;
+  transition: .2s;
+}
+
+.upload:hover {
+  background: #e8f5ff;
+}
+
+.upload-icon {
+  font-size: 55px;
+  margin-bottom: 10px;
+}
+
+.upload strong {
+  display: block;
+  color: #398bd0;
+  font-size: 17px;
+}
+
+.upload p {
+  font-size: 13px;
+  color: #91aec7;
+  margin-top: 8px;
+}
+
+#fileInput {
+  display: none;
+}
+
+.preview {
+  display: none;
+  margin-top: 20px;
+  padding: 12px;
+  border-radius: 18px;
+  background: #f0f7ff;
+  text-align: center;
+}
+
+.preview img {
+  max-width: 100%;
+  max-height: 350px;
+  border-radius: 12px;
+  object-fit: contain;
+}
+
+.file-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.delete {
+  background: #fff0f2;
+  color: #d66c81;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 9px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.analyze {
+  width: 100%;
+  padding: 16px;
+  margin-top: 20px;
+  background: linear-gradient(100deg,#50b5ed,#3588db);
+  border: none;
+  border-radius: 15px;
+  color: white;
+  font-family: inherit;
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 6px 18px #398bd033;
+}
+
+.analyze:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+#status {
+  text-align: center;
+  font-size: 13px;
+  color: #8baac5;
+  margin-top: 15px;
+}
+
+#results {
+  display: none;
+}
+
+.main-result {
+  text-align: center;
+  background: linear-gradient(135deg,#e9f6ff,#d9edff);
+  border-radius: 20px;
+  padding: 25px;
+  margin-bottom: 25px;
+}
+
+.fruit-icon {
+  font-size: 60px;
+}
+
+.fruit-name {
+  color: #328bd2;
+  font-size: 29px;
+  font-weight: 700;
+  margin: 8px 0;
+  overflow-wrap: anywhere;
+}
+
+.confidence {
+  color: #328bd2;
+  font-size: 39px;
+  font-weight: 700;
+}
+
+.small {
+  font-size: 13px;
+  color: #8baac5;
+}
+
+.result-item {
+  margin-top: 14px;
+  background: #f4f9ff;
+  padding: 15px;
+  border-radius: 13px;
+}
+
+.result-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 14px;
+  margin-bottom: 9px;
+}
+
+.result-top span:first-child {
+  overflow-wrap: anywhere;
+}
+
+.track {
+  height: 10px;
+  background: #deebf7;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.fill {
+  height: 100%;
+  background: linear-gradient(90deg,#8bd5f5,#398edb);
+  border-radius: 20px;
+}
+
+footer {
+  text-align: center;
+  color: #80a6c7;
+  font-size: 13px;
+  padding: 20px;
+}
+
+@media(max-width:500px) {
+  body { padding: 20px 12px; }
+  .card { padding: 20px; }
+  .logo { font-size: 39px; }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<header>
+  <div class="logo">🫐 Fruity AI</div>
+  <p class="subtitle">AI Fruit Recognition System</p>
+  <div class="fruits">🍓 🍇 🍒 🫐 🍑</div>
+</header>
+
+<div class="card">
+
+  <h2>📸 อัปโหลดรูปภาพผลไม้</h2>
+
+  <label class="upload" for="fileInput">
+    <div class="upload-icon">🖼️</div>
+    <strong>เลือกรูปภาพของคุณ</strong>
+    <p>กดเพื่อเลือกรูปภาพจากอุปกรณ์</p>
+    <p>รองรับ JPG, PNG, WEBP</p>
+  </label>
+
+  <input type="file" id="fileInput"
+  accept="image/jpeg,image/png,image/webp">
+
+  <div class="preview" id="previewBox">
+    <img id="previewImage" alt="ภาพตัวอย่าง">
+
+    <div class="file-row">
+      <span id="fileName"></span>
+      <button class="delete" id="deleteBtn">✕ ลบภาพ</button>
+    </div>
+  </div>
+
+  <button class="analyze" id="analyzeBtn" disabled>
+    ✨ วิเคราะห์ผลไม้
+  </button>
+
+  <p id="status">กรุณาเลือกรูปภาพเพื่อเริ่มต้น 💙</p>
+
+</div>
+
+<div class="card" id="results">
+
+  <h2>💎 ผลการวิเคราะห์จาก AI</h2>
+
+  <div class="main-result">
+    <div class="fruit-icon" id="fruitIcon">🍎</div>
+    <div class="small">ผลไม้ที่ตรวจพบ</div>
+    <div class="fruit-name" id="fruitName">-</div>
+    <div class="confidence" id="confidence">0%</div>
+    <div class="small">ความมั่นใจของโมเดล</div>
+  </div>
+
+  <h2>📊 คะแนนการจำแนก</h2>
+
+  <div id="predictionList"></div>
+
+</div>
+
+<footer>
+  💙 Fruity AI - Discover Your Fruit 💙
+</footer>
+
+</div>
+
+<script>
+
+// ===================================
+// TEACHABLE MACHINE MODEL
+// ===================================
+
+// โฟลเดอร์โมเดลต้องชื่อ my_model
+const URL = "./my_model/";
+
+let model = null;
+let selectedFile = null;
+let imageObjectURL = null;
+let busy = false;
+
+// ===================================
+// ELEMENTS
+// ===================================
+
+const fileInput = document.getElementById("fileInput");
+const previewImage = document.getElementById("previewImage");
+const previewBox = document.getElementById("previewBox");
+const analyzeBtn = document.getElementById("analyzeBtn");
+const status = document.getElementById("status");
+const results = document.getElementById("results");
+
+// ===================================
+// LOAD MODEL
+// ===================================
+
+async function loadModel() {
+
+  if (model) return;
+
+  status.textContent = "กำลังโหลด AI Model...";
+
+  const modelURL = URL + "model.json";
+  const metadataURL = URL + "metadata.json";
+
+  model = await tmImage.load(
+    modelURL,
+    metadataURL
+  );
+
+  console.log("AI Model Loaded!");
+}
+
+// ===================================
+// SELECT IMAGE
+// ===================================
+
+fileInput.addEventListener("change", function(event) {
+
+  const file = event.target.files[0];
+
+  if (!file) return;
+
+  if (!["image/jpeg","image/png","image/webp"].includes(file.type)) {
+    status.textContent = "กรุณาเลือก JPG, PNG หรือ WEBP";
+    fileInput.value = "";
+    return;
+  }
+
+  selectedFile = file;
+
+  if (imageObjectURL) {
+    URL_REVOKE(imageObjectURL);
+  }
+
+  imageObjectURL = window.URL.createObjectURL(file);
+
+  previewImage.onload = function() {
+
+    previewBox.style.display = "block";
+    analyzeBtn.disabled = false;
+    results.style.display = "none";
+
+    document.getElementById("fileName").textContent =
+      file.name;
+
+    status.textContent = "พร้อมวิเคราะห์รูปภาพแล้ว 💙";
+  };
+
+  previewImage.onerror = function() {
+    status.textContent = "ไม่สามารถอ่านรูปภาพได้";
+    analyzeBtn.disabled = true;
+  };
+
+  previewImage.src = imageObjectURL;
+
+});
+
+function URL_REVOKE(url) {
+  window.URL.revokeObjectURL(url);
+}
+
+// ===================================
+// DELETE IMAGE
+// ===================================
+
+document.getElementById("deleteBtn")
+.addEventListener("click", function() {
+
+  if (imageObjectURL) {
+    URL_REVOKE(imageObjectURL);
+  }
+
+  imageObjectURL = null;
+  selectedFile = null;
+
+  fileInput.value = "";
+  previewImage.src = "";
+
+  previewBox.style.display = "none";
+  results.style.display = "none";
+  analyzeBtn.disabled = true;
+
+  status.textContent = "กรุณาเลือกรูปภาพเพื่อเริ่มต้น 💙";
+
+});
+
+// ===================================
+// FRUIT EMOJI
+// ===================================
+
+function fruitEmoji(name) {
+
+  const n = name.toLowerCase();
+
+  const fruits = {
+    apple: "🍎",
+    banana: "🍌",
+    orange: "🍊",
+    grape: "🍇",
+    strawberry: "🍓",
+    watermelon: "🍉",
+    mango: "🥭",
+    pineapple: "🍍",
+    blueberry: "🫐",
+    cherry: "🍒",
+    peach: "🍑",
+    lemon: "🍋",
+    coconut: "🥥",
+    pear: "🍐",
+    avocado: "🥑",
+    แอปเปิล: "🍎",
+    กล้วย: "🍌",
+    ส้ม: "🍊",
+    องุ่น: "🍇",
+    มะม่วง: "🥭",
+    แตงโม: "🍉"
+  };
+
+  for (const key in fruits) {
+    if (n.includes(key.toLowerCase())) {
+      return fruits[key];
+    }
+  }
+
+  return "🍉";
+}
+
+// ===================================
+// PREDICT IMAGE
+// ===================================
+
+analyzeBtn.addEventListener("click", async function() {
+
+  if (!selectedFile || !previewImage.complete) {
+    status.textContent = "กรุณาเลือกรูปภาพก่อน";
+    return;
+  }
+
+  if (busy) return;
+
+  busy = true;
+  analyzeBtn.disabled = true;
+  results.style.display = "none";
+
+  try {
+
+    // Load actual Teachable Machine model
+    await loadModel();
+
+    status.textContent = "AI กำลังวิเคราะห์ผลไม้... ✨";
+
+    // Predict uploaded image
+    const predictions = await model.predict(previewImage);
+
+    // Sort prediction by confidence
+    predictions.sort((a,b) =>
+      b.probability - a.probability
+    );
+
+    const best = predictions[0];
+
+    // Show best prediction
+    document.getElementById("fruitIcon").textContent =
+      fruitEmoji(best.className);
+
+    document.getElementById("fruitName").textContent =
+      best.className;
+
+    document.getElementById("confidence").textContent =
+      (best.probability * 100).toFixed(2) + "%";
+
+    // Show all classes
+    const list = document.getElementById("predictionList");
+
+    list.innerHTML = "";
+
+    predictions.forEach(function(item) {
+
+      const percent = item.probability * 100;
+
+      const row = document.createElement("div");
+      row.className = "result-item";
+
+      const top = document.createElement("div");
+      top.className = "result-top";
+
+      const name = document.createElement("span");
+      name.textContent =
+        fruitEmoji(item.className) + " " + item.className;
+
+      const score = document.createElement("span");
+      score.textContent = percent.toFixed(2) + "%";
+
+      top.appendChild(name);
+      top.appendChild(score);
+
+      const track = document.createElement("div");
+      track.className = "track";
+
+      const fill = document.createElement("div");
+      fill.className = "fill";
+      fill.style.width = percent + "%";
+
+      track.appendChild(fill);
+
+      row.appendChild(top);
+      row.appendChild(track);
+
+      list.appendChild(row);
+
+    });
+
+    results.style.display = "block";
+
+    status.textContent = "วิเคราะห์สำเร็จแล้ว 💙";
+
+    results.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+
+  } catch(error) {
+
+    console.error(error);
+
+    status.textContent =
+      "เกิดข้อผิดพลาด: โหลดโมเดลหรือวิเคราะห์ไม่ได้ ตรวจสอบไฟล์ my_model";
+
+  } finally {
+
+    busy = false;
+    analyzeBtn.disabled = false;
+
+  }
+
+});
+
+</script>
+
+</body>
+</html>
